@@ -1,24 +1,8 @@
-facebook-message-parser
+facebook-message-rnn
 =======================
 
-Based on `facebook-chat-word-cloud <https://github.com/mjmeli/facebook-chat-word-cloud/>`_:
+Parser is based on `facebook-chat-word-cloud <https://github.com/mjmeli/facebook-chat-word-cloud/>`_:
 "A Python tool for generating a word cloud for a Facebook chat conversation."
-
-Requirements
-------------
-This uses `lxml` to parse the messages file provided by Facebook. This requires `libxml2` and `libxslt` to be installed.
-
-For Debian/Ubuntu:
-
-    sudo apt-get install libxml2-dev libxslt-dev python-dev python-tk
-
-This also uses `Pillow` to handle image manipulation. This requires `libjpeg`, `zlib`, and `libfreetype`:
-
-    sudo apt-get install libjpeg-dev zlib1g-dev libfreetype6-dev
-
-Testing
--------
-    python setup.py test
 
 Get Facebook messages archive
 -----------------------------
@@ -30,7 +14,19 @@ Get Facebook messages archive
 
 The messages file downloaded from Facebook will probably be quite large (mine was 60 MB). It may take a while to parse, which can get annoying when you are making small changes to get a nice looking word cloud. I highly recommend using the sample conversation I provide as this will parse in seconds and has very high word density. You can either directly reference this file (examples/messages_sample.htm with user "Foo Bar") or just use the "-sample" option with the command
 
-Issues
+Parsing requirements
+------------
+This uses `lxml` to parse the messages file provided by Facebook. This requires `libxml2` and `libxslt` to be installed.
+
+For Debian/Ubuntu:
+
+    sudo apt-get install libxml2-dev libxslt-dev python-dev python-tk
+
+This also uses `Pillow` to handle image manipulation. This requires `libjpeg`, `zlib`, and `libfreetype`:
+
+    sudo apt-get install libjpeg-dev zlib1g-dev libfreetype6-dev
+
+Parsing issues
 ------
 **ImportError: The _imagingft C module is not installed**
 This means you don't have `libfreetype` installed. See the Requirements section. If installing it does not work, you may have to uninstall and reinstall `Pillow` via `pip`.
