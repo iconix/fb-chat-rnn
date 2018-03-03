@@ -3,7 +3,7 @@ import datetime
 from lxml import html
 from unittest import TestCase
 
-from facebook_wordcloud.message_parser import *
+from fb_chat_rnn.message_parser import *
 
 TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), "messages_sample.htm")
 
@@ -63,49 +63,51 @@ class TestMessageParser(TestCase):
         thread.add_message(msg3)
 
         # Verify messages are sorted
-        self.assertEqual(msg1, thread.messages[0])
-        self.assertEqual(msg3, thread.messages[1])
-        self.assertEqual(msg2, thread.messages[2])
+        self.assertEqual(msg1, thread.messages[2])
+        self.assertEqual(msg3, thread.messages[0])
+        self.assertEqual(msg2, thread.messages[1])
 
         # Add a message with the same date
         msg4 = Message("User 2", datetime.datetime(2016, 1, 2), "Test")
         thread.add_message(msg4)
-        self.assertEqual(msg1, thread.messages[0])
+        self.assertEqual(msg1, thread.messages[3])
         self.assertEqual(msg3, thread.messages[1])
-        self.assertEqual(msg4, thread.messages[2])
-        self.assertEqual(msg2, thread.messages[3])
+        self.assertEqual(msg4, thread.messages[0])
+        self.assertEqual(msg2, thread.messages[2])
 
         # Add a user that doesn't exist
-        msg_bad1 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
-        self.assertRaises(ValueError, thread.add_message, msg_bad1)
+        msg5 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
+        thread.add_message(msg5)
+        self.assertEqual(msg5, thread.messages[0])
 
         # Test creating a thread with arrays
         thread2 = Thread(["User 1", "User 2"])
         thread2.add_message(msg1)
         thread2.add_message(msg2)
-        self.assertEqual(msg1, thread2.messages[0])
-        self.assertEqual(msg2, thread2.messages[1])
-        msg_bad1 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
-        self.assertRaises(ValueError, thread.add_message, msg_bad1)
+        self.assertEqual(msg1, thread2.messages[1])
+        self.assertEqual(msg2, thread2.messages[0])
+        msg5 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
+        thread.add_message(msg5)
+        self.assertEqual(msg5, thread.messages[0])
 
         thread3 = Thread(["User 1", "User 2", "User 1"], [msg1, msg2, msg3])
-        self.assertEquals(len(thread3.users), 2)
+        self.assertEqual(len(thread3.users), 2)
         self.assertEqual(msg1, thread3.messages[0])
         self.assertEqual(msg3, thread3.messages[1])
         self.assertEqual(msg2, thread3.messages[2])
-        msg_bad1 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
-        self.assertRaises(ValueError, thread.add_message, msg_bad1)
-
-        self.assertRaises(ValueError, Thread, ["User 1"], [msg2])
+        msg5 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
+        thread.add_message(msg5)
+        self.assertEqual(msg5, thread.messages[0])
 
         thread4 = Thread()
         thread4.add_users(["User 1", "User 2"])
         thread4.add_message(msg1)
         thread4.add_message(msg2)
-        self.assertEqual(msg1, thread4.messages[0])
-        self.assertEqual(msg2, thread4.messages[1])
-        msg_bad1 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
-        self.assertRaises(ValueError, thread.add_message, msg_bad1)
+        self.assertEqual(msg1, thread4.messages[1])
+        self.assertEqual(msg2, thread4.messages[0])
+        msg5 = Message("User 3", datetime.datetime(2016, 1, 3), "Test")
+        thread.add_message(msg5)
+        self.assertEqual(msg5, thread.messages[0])
 
     # Test message parser constructor with good and bad HTML inputs
     def test_constructor(self):
@@ -117,46 +119,25 @@ class TestMessageParser(TestCase):
         self.assertRaises(ValueError, MessageParser, [1, 2, 3])
         self.assertRaises(ValueError, MessageParser, html.fromstring(self.testdata))
 
-    # Test get_users_name functionality
-    def test_get_users_name(self):
-        parser = MessageParser(self.testdata)
-        self.assertEquals("John Smith", parser.get_users_name())
-
     # Test get_users_facebookaddress functionality
     def test_get_users_facebookaddress(self):
         parser = MessageParser(self.testdata)
-        self.assertEquals("John Smith", parser.get_users_facebookaddress())
+        self.assertEqual(["The Driver", "Party Girl", "Social Butterfly", "Eager Beaver", "Gif Goddess", "Mediator"], parser.get_participants())
 
     def test_parser(self):
         parser = MessageParser(self.testdata)
-        thread = parser.parse_thread("Foo Bar")
+        thread = parser.parse_thread()
 
         # Verify thread
-        self.assertTrue("John Smith" in thread.users)
-        self.assertTrue("Foo Bar" in thread.users)
-        self.assertTrue("Bobby Notalastname" not in thread.users)
+        self.assertTrue("The Driver" in thread.users)
+        self.assertTrue("Party Girl" in thread.users)
+        self.assertTrue("Social Butterfly" in thread.users)
+        self.assertTrue("Eager Beaver" in thread.users)
+        self.assertTrue("Gif Goddess" in thread.users)
+        self.assertTrue("Mediator" in thread.users)
+        self.assertTrue("John Smith" not in thread.users)
         self.assertTrue("Linus Torvalds" not in thread.users)
 
         # Verify messages
         messages = thread.messages
-        self.assertEquals(len(messages), 10)
-
-    def test_parser_multiple_users(self):
-        parser = MessageParser(self.testdata)
-        thread = parser.parse_thread(["Foo Bar", "Bobby Notalastname"])
-
-        # Verify thread
-        self.assertTrue("John Smith" in thread.users)
-        self.assertTrue("Foo Bar" in thread.users)
-        self.assertTrue("Bobby Notalastname" in thread.users)
-        self.assertTrue("Linus Torvalds" not in thread.users)
-
-        # Verify messages
-        messages = thread.messages
-        self.assertEquals(len(messages), 2)
-        self.assertEquals(messages[0].contents, "Known test message #1.")
-        self.assertEquals(messages[1].contents, "Known test message #2.")
-
-    def test_parser_invalid_conversation(self):
-        parser = MessageParser(self.testdata)
-        self.assertRaises(MessageParserException, parser.parse_thread, "Rick and Morty")
+        self.assertEqual(len(messages), 14)

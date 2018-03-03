@@ -18,3 +18,5 @@ ENV/
 
 # For temporary storage away from the repo
 tmp/
+
+.vscode

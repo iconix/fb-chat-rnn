@@ -1,3 +1,2 @@
 include README.rst
-include facebook_wordcloud/STOPWORDS
-include facebook_wordcloud/messages_sample.htm
+include fb_chat_rnn/messages_sample.htm

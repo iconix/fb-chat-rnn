@@ -2,7 +2,6 @@
     message_parser
     Enables parsing of messages from the Facebook HTML.
 """
-import bisect
 import datetime
 from lxml import html
 from collections import Counter
@@ -47,7 +46,7 @@ class Thread:
         else:
             for message in messages:
                 if not any(message.sender == user for user in self.users):
-                    raise ValueError
+                    self.add_user(message.sender)
             self.messages = sorted(messages, key=lambda x: x.date, reverse=False)
 
     # Add a user to the conversation
@@ -61,30 +60,30 @@ class Thread:
     # Add a message to the conversation
     def add_message(self, message):
         if not any(message.sender == user for user in self.users):
-            raise ValueError
-        bisect.insort(self.messages, message)
+            self.add_user(message.sender)
+        self.messages.insert(0, message)
 
     # Return message contents
     def get_messages_contents(self):
-        return [message.contents for message in self.messages]
+        return ["<" + message.sender + ">" + str(message.contents) + "</" + message.sender + ">" for message in self.messages]
 
 """ The message parser itself """
 class MessageParser:
     # HTML should be sent in as a string
     def __init__(self, htmlstr):
-        if not isinstance(htmlstr, basestring):
+        if not isinstance(htmlstr, str):
             raise ValueError
         self.html = html.fromstring(htmlstr)
 
     # Parse the HTML for a conversation thread
     # Can send in either one user or a list of users
-    def parse_thread(self, users):
+    def parse_thread(self):
+        # Add user's @facebook.com address to the list of users
+        users = self.get_participants()
+
         # Ensure users array is a list
         if type(users) is not list:
             users = [users]
-
-        # Add user's @facebook.com address to the list of users
-        users.append(self.get_users_facebookaddress())
 
         # Create a new thread object
         thread = Thread(users)
@@ -101,8 +100,11 @@ class MessageParser:
         for potential_thread in potential_threads:
             # Extract the names as a list of strings
             try:
-                potential_users = potential_thread.xpath("text()")[0].strip().split(", ")
-                potential_users = [user.encode("utf-8") for user in potential_users]
+                potential_users = ''.join(potential_thread.xpath("text()")).strip()
+                # remove "Participants: " prefix
+                potential_users = potential_users.split(': ')[1]
+
+                potential_users = [x.strip() for x in potential_users.split(',')]
             except (AttributeError, IndexError):
                 # An exception may be thrown if a thread is found with no users
                 # attached to it. Why does this happen? I don't know. Skip it.
@@ -118,16 +120,16 @@ class MessageParser:
 
             # Get all of the message headers and message contents
             message_headers = potential_thread.xpath("div[@class='message']")
-            message_contents = potential_thread.xpath("p")
-            print "Found %d messages in thread #%d" % (len(message_headers), matches)
+            print("Found %d messages in thread #%d" % (len(message_headers), matches))
 
             # Extract the information from the messages
-            for i, header in enumerate(message_headers):
+            for header in message_headers:
                 messages_parsed = messages_parsed + 1
                 try:
                     sending_user = header.xpath("div/span[@class='user']/text()[1]")[0]
                     date = header.xpath("div/span[@class='meta']/text()[1]")[0]
-                    contents = message_contents[i].xpath("text()")[0]
+                    # Get the text of the next sibling p tag
+                    contents = header.xpath("following-sibling::p[1]/text()")[0]
 
                     # Add a message to the thread
                     thread.add_message(Message(sending_user, date, contents))
@@ -150,18 +152,16 @@ class MessageParser:
             raise MessageParserException("Conversation thread could not be found")
 
         # Print results
-        print "RESULTS: Parsed %d threads and %d messages for %d text messages" % (matches, messages_parsed, messages_added)
+        print("RESULTS: Parsed %d threads and %d messages for %d text messages" % (matches, messages_parsed, messages_added))
 
         # Return the parsed thread
         return thread
 
-    # Parse the HTML for the user's name
-    def get_users_name(self):
-        return self.html.xpath("/html/body/div/h1/text()")[0]
-
     # Parse the HTML for the user's name or @facebook.com address
-    def get_users_facebookaddress(self):
-        # just take the most common address in the file
-        all_names_dirty = self.html.xpath("//div[@class='thread']/text()")
-        all_names_clean = [y.strip() for x in all_names_dirty for y in x.split(',') if y.strip()]
-        return Counter(all_names_clean).most_common(1)[0][0]
+    def get_participants(self):
+        all_names_dirty = ''.join(self.html.xpath("//div[@class='thread']/text()")).strip()
+
+        # remove "Participants: " prefix
+        all_names_dirty = all_names_dirty.split(': ')[1]
+
+        return [x.strip() for x in all_names_dirty.split(',')]

@@ -3,7 +3,7 @@ import mock
 import argparse
 from unittest import TestCase
 
-from facebook_wordcloud.arghelper import *
+from fb_chat_rnn.arghelper import *
 
 TESTDATA_FILENAME = os.path.join(os.path.dirname(__file__), "messages_sample.htm")
 
