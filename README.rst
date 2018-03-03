@@ -1,8 +1,9 @@
 fb-chat-rnn
 =======================
 
-Message parsing is based on `facebook-chat-word-cloud <https://github.com/mjmeli/facebook-chat-word-cloud/>`_:
-"A Python tool for generating a word cloud for a Facebook chat conversation."
+**This repository is under active development - actual conversation generation coming soon!**
+
+Message parsing is based on `facebook-chat-word-cloud <https://github.com/mjmeli/facebook-chat-word-cloud/>`_, a Python tool for generating a word cloud for a Facebook chat conversation.
 
 Get Facebook messages archive
 -----------------------------
