@@ -20,3 +20,5 @@ ENV/
 tmp/
 
 .vscode
+
+.ipynb_checkpoints
